@@ -1,0 +1,179 @@
+Cmp-Mod V01 Created by PcbNew   date = 28/02/2017 21:12:12
+
+BeginCmp
+TimeStamp = 58B5D468
+Path = /58A4F945
+Reference = Y1;
+ValeurCmp = 16 MHz Crystal;
+IdModule  = Crystals:Crystal_SMD_5032-2pin_5.0x3.2mm_HandSoldering;
+EndCmp
+
+BeginCmp
+TimeStamp = 58B5D462
+Path = /58B5F32A
+Reference = TP7;
+ValeurCmp = GND;
+IdModule  = Measurement_Points:Measurement_Point_Square-SMD-Pad_Small;
+EndCmp
+
+BeginCmp
+TimeStamp = 58B5D45D
+Path = /58B5F2B1
+Reference = TP6;
+ValeurCmp = +5V;
+IdModule  = Measurement_Points:Measurement_Point_Square-SMD-Pad_Small;
+EndCmp
+
+BeginCmp
+TimeStamp = 58B5D458
+Path = /58B5EE0B
+Reference = TP5;
+ValeurCmp = ~RESET;
+IdModule  = Measurement_Points:Measurement_Point_Square-SMD-Pad_Small;
+EndCmp
+
+BeginCmp
+TimeStamp = 58B5D453
+Path = /58B5E49A
+Reference = TP4;
+ValeurCmp = TDO;
+IdModule  = Measurement_Points:Measurement_Point_Square-SMD-Pad_Small;
+EndCmp
+
+BeginCmp
+TimeStamp = 58B5D44E
+Path = /58B5E194
+Reference = TP3;
+ValeurCmp = TCK;
+IdModule  = Measurement_Points:Measurement_Point_Square-SMD-Pad_Small;
+EndCmp
+
+BeginCmp
+TimeStamp = 58B5D449
+Path = /58B5E4F3
+Reference = TP2;
+ValeurCmp = TDI;
+IdModule  = Measurement_Points:Measurement_Point_Square-SMD-Pad_Small;
+EndCmp
+
+BeginCmp
+TimeStamp = 58B5D444
+Path = /58B5E42F
+Reference = TP1;
+ValeurCmp = TMS;
+IdModule  = Measurement_Points:Measurement_Point_Square-SMD-Pad_Small;
+EndCmp
+
+BeginCmp
+TimeStamp = 58B5D433
+Path = /58A4E483
+Reference = R2;
+ValeurCmp = 22R;
+IdModule  = Resistors_SMD:R_1206_HandSoldering;
+EndCmp
+
+BeginCmp
+TimeStamp = 58B5D42D
+Path = /58A4E546
+Reference = R1;
+ValeurCmp = 22R;
+IdModule  = Resistors_SMD:R_1206_HandSoldering;
+EndCmp
+
+BeginCmp
+TimeStamp = 58B5D427
+Path = /58A51935
+Reference = P2;
+ValeurCmp = CONN_01X10;
+IdModule  = Connectors_JST:JST_PH_B10B-PH-K_10x2.00mm_Straight;
+EndCmp
+
+BeginCmp
+TimeStamp = 58B5D419
+Path = /58A4E3C4
+Reference = P1;
+ValeurCmp = USB_A;
+IdModule  = SimonsFPLibrary2017:Amphenol_87583-2010BLF;
+EndCmp
+
+BeginCmp
+TimeStamp = 58B5D40B
+Path = /58A4E37E
+Reference = IC1;
+ValeurCmp = AT90USB1287;
+IdModule  = Housings_QFP:TQFP-64_14x14mm_Pitch0.8mm;
+EndCmp
+
+BeginCmp
+TimeStamp = 58B5D3C7
+Path = /58A50DC2
+Reference = F1;
+ValeurCmp = 500mA Polyfuse;
+IdModule  = Resistors_SMD:R_1812_HandSoldering;
+EndCmp
+
+BeginCmp
+TimeStamp = 58B5D3C1
+Path = /58A4FE1E
+Reference = C7;
+ValeurCmp = 100nF;
+IdModule  = Capacitors_SMD:C_0805_HandSoldering;
+EndCmp
+
+BeginCmp
+TimeStamp = 58B5D3BB
+Path = /58A4FDE1
+Reference = C6;
+ValeurCmp = 100nF;
+IdModule  = Capacitors_SMD:C_0805_HandSoldering;
+EndCmp
+
+BeginCmp
+TimeStamp = 58B5D3B5
+Path = /58A4FD2F
+Reference = C5;
+ValeurCmp = 100nF;
+IdModule  = Capacitors_SMD:C_0805_HandSoldering;
+EndCmp
+
+BeginCmp
+TimeStamp = 58B5D3AF
+Path = /58A4F76F
+Reference = C4;
+ValeurCmp = 1uF;
+IdModule  = Capacitors_SMD:C_0805_HandSoldering;
+EndCmp
+
+BeginCmp
+TimeStamp = 58B5D3A9
+Path = /58A4F61A
+Reference = C3;
+ValeurCmp = 100nF;
+IdModule  = Capacitors_SMD:C_0805_HandSoldering;
+EndCmp
+
+BeginCmp
+TimeStamp = 58B5D3A3
+Path = /58A4FA4D
+Reference = C2;
+ValeurCmp = 22pF;
+IdModule  = Capacitors_SMD:C_0805_HandSoldering;
+EndCmp
+
+BeginCmp
+TimeStamp = 58B5D39D
+Path = /58A4F9FD
+Reference = C1;
+ValeurCmp = 22pF;
+IdModule  = Capacitors_SMD:C_0805_HandSoldering;
+EndCmp
+
+BeginCmp
+TimeStamp = 58B5D43F
+Path = /58B5C3A4
+Reference = SW1;
+ValeurCmp = SW_DIP_x04;
+IdModule  = Buttons_Switches_SMD:SW_DIP_x4_W6.15mm_Slide_Omron_A6H;
+EndCmp
+
+EndListe

@@ -10,9 +10,9 @@ SmallyMouse2 supports both JTAG and USB bootloader programming.  The AT90USB1287
 
 ## Installation
 
-Note: This is an AVR Studio 7 project that can be loaded and compiled by the IDE
+Note: This is an Atmel Studio 7 project that can be loaded and compiled by the IDE
 
-Please see http://www.waitingforfriday.com for detailed documentation about SmallyMouse2
+Please see http://www.waitingforfriday.com/?p=827 for detailed documentation about SmallyMouse2
 
 ## Author
 

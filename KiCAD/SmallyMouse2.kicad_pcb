@@ -13,6 +13,15 @@
   )
 
   (page A4)
+  (title_block
+    (title SmallyMouse2)
+    (date 2017-05-27)
+    (rev 2.0)
+    (company http://www.WaitingForFriday.com)
+    (comment 1 "(c)2017 Simon Inns")
+    (comment 2 "License: Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)")
+  )
+
   (layers
     (0 F.Cu signal)
     (31 B.Cu signal)

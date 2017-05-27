@@ -18,7 +18,7 @@ Please see http://www.waitingforfriday.com for detailed documentation about Smal
 
 SmallyMouse2 is written and maintained by Simon Inns.
 
-## License
+## License (Software)
 
     SmallyMouse2 is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -32,3 +32,7 @@ SmallyMouse2 is written and maintained by Simon Inns.
 
     You should have received a copy of the GNU General Public License
     along with SmallyMouse2. If not, see <http://www.gnu.org/licenses/>.
+
+## License (Hardware)
+
+Both the schematic and the PCB design of SmallyMouse2 (i.e. the KiCAD project and files) are covered by a Creative Commons license; as with the software you are welcome (and encouraged!) to extend, re-spin and otherwise use and modify the design as allowed by the license.  However; under the terms of the Attribution-ShareAlike 4.0 International (CC BY-SA 4.0) license you are required to release your design (or redesign) under the same license.  For details of the licensing requirements please see <https://creativecommons.org/licenses/by-sa/4.0/>

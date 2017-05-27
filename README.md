@@ -1,6 +1,6 @@
 ## Synopsis
 
-SmallyMouse2 is the AT90USB1287 firmware source code for the SmallyMouse2 project.
+SmallyMouse2 is the AT90USB1287 firmware source code and KiCAD schematic/PCB design for the SmallyMouse2 project.
 
 ## Motivation
 

@@ -119,7 +119,8 @@
 
 // Function prototypes
 void initialiseHardware(void);
-void checkConfiguration(void);
+void initialiseTimers(void);
+uint8_t getRateLimiterState(void);
 void processMouse(void);
 
 // USB callback event handlers (LUFA)

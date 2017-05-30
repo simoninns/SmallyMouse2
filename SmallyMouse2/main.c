@@ -117,6 +117,11 @@ ISR(TIMER0_COMPA_vect)
 		// Range check the phase
 		if ((mouseDirectionX == 1) && (mouseEncoderPhaseX > 3)) mouseEncoderPhaseX = 0;
 		if ((mouseDirectionX == 0) && (mouseEncoderPhaseX < 0)) mouseEncoderPhaseX = 3;
+	} else {
+		// Set all quadrature outputs to zero
+		X1_PORT &= ~X1;	// Set X1 to 0
+		X2_PORT &= ~X2;	// Set X2 to 0
+		mouseEncoderPhaseX = 0;
 	}
 	
 	// Set the timer top value for the next interrupt
@@ -143,6 +148,11 @@ ISR(TIMER2_COMPA_vect)
 		// Range check the phase
 		if ((mouseDirectionY == 1) && (mouseEncoderPhaseY > 3)) mouseEncoderPhaseY = 0;
 		if ((mouseDirectionY == 0) && (mouseEncoderPhaseY < 0)) mouseEncoderPhaseY = 3;
+	} else {
+		// Set all quadrature outputs to zero
+		Y1_PORT &= ~Y1;	// Set Y1 to 0
+		Y2_PORT &= ~Y2;	// Set Y2 to 0
+		mouseEncoderPhaseY = 1;
 	}
 	
 	// Set the timer top value for the next interrupt
@@ -409,6 +419,9 @@ uint8_t processMouseMovement(int8_t movementUnits, uint8_t axis)
 	if (axis == MOUSEX) timerTopValue = mouseDistanceX;
 	else timerTopValue = mouseDistanceY;
 	
+	// Range check the quadrature output buffer
+	if (timerTopValue > 127) timerTopValue = 127;
+	
 	// Since the USB reports arrive at 100-125 Hz (even if there is only
 	// a small amount of movement, we have to output the quadrature
 	// at minimum rate to keep up with the reports (otherwise it creates
@@ -442,23 +455,24 @@ uint8_t processMouseMovement(int8_t movementUnits, uint8_t axis)
 		// Rate limit is on
 		
 		// Rate limit is provided in hertz
-		// Timer rate is 15,625 ticks per second = 64 uS per tick
-		// Timer top value is 0-255 (8 bit)
+		// Each timer tick is 64 uS
+		//
+		// Convert hertz into period in uS
+		// 1500 Hz = 1,000,000 / 1500 = 666.67 uS
+		// 
+		// Convert period into timer ticks (* 4 due to quadrature)
+		// 666.67 us / (64 * 4) = 2.6 ticks
+		//
+		// Timer TOP is 0-255, so subtract 1
+		// 10.42 ticks - 1 = 9.42 ticks
 		
-		// There are 4 interrupts per quadrature output so if the 
-		// rate limit is 1500 Hz then the maximum interrupt speed
-		// should be 1500 * 4 = 6000 Hz
-		//
-		// So the minimum value of top should be:
-		// 1,000,000 / (1500 * 4) = 166.67 / 64 uS = 2.6
-		//
 		// Here we shift the calculation to keep it in the 16 bit range
-		uint16_t rateLimit = (10000 / ((Q_RATELIMIT / 100) * 4)) / 64;
+		uint32_t rateLimit = ((1000000 / Q_RATELIMIT) / 256) - 1;
 		
-		// If the timerTopValue is higher than the rate limit, we reduce
-		// it.  This will cause addition lag that is handled by the 
-		// quadrature output buffer limit above.
-		if (timerTopValue < rateLimit) timerTopValue = rateLimit;
+		// If the timerTopValue is less than the rate limit, we output
+		// at the maximum allowed rate.  This will cause addition lag that
+		// is handled by the quadrature output buffer limit above.
+		if (timerTopValue < (uint16_t)rateLimit) timerTopValue = (uint16_t)rateLimit;
 	}
 	
 	// Return the timer TOP value

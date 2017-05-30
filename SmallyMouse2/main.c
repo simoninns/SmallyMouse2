@@ -51,41 +51,30 @@
 #include "ConfigDescriptor.h"
 #include "main.h"
 
+#define MOUSEX	0
+#define MOUSEY	1
+
 // Configuration ------------------------------------------------------------------------------------------------------
 
-// Quadrature output limiting
+// Quadrature output frequency limit
 //
 // This setting limits the maximum frequency of the quadrature output towards the retro computer.
 // If the rate of output is too high the retro computer cannot 'count' the input accurately and
 // this causes spurious mouse movement.
 //
-// There are two possible limits based on the setting of the 'Slow' configuration jumper.  If the 
-// jumper is present, the software will use the setting of "SLOW_RATELIMIT" otherwise the setting
-// of "FAST_RATELIMIT" is used.  The slow rate limit is recommended for older 8-bit machines, for
-// 16 and 32 bit machines the fast rate limit should be used.
-//
-// This setting is in Hertz (maximum allowed output rate is 15625 Hz - do not exceed this):
-#define SLOW_RATELIMIT 1400
-#define FAST_RATELIMIT 3000
+// With no rate limit the quadrature output speed will reach a maximum of 3,906.25 Hz
+// For 8-bit machines it is recommended that the speed doesn't exceed 1,400 Hz.  This limit is
+// only applied if the 'slow' configuration jumper is shorted (i.e. on)
+#define Q_RATELIMIT 1400
 
-// Movement lag limiting
+// Quadrature output buffer limit
 //
-// Since the output rate is limited, it's possible for the USB movement input to overrun the 
-// quadrature output speed.  The software will 'buffer' any overrun and continue to output
-// the indicated movement once the USB input slows down or stops.  This prevents movement
-// being lost.  However, this buffering causes the quadrature mouse movement to lag behind
-// the actual mouse movement.  Too much lag will cause the mouse to visibly keep moving after
-// the user has stopped moving the physical mouse (and is confusing to the user).  Therefore
-// the lag limit setting limits the number of movements that can be buffered (extra movement
-// over the lag limit is silently dropped).
-//
-// Note that the effect of the lag limit is dependent on the maximum allowed output rate.  The
-// amount of lag will be higher for lower rate output as each buffered movement takes longer
-// to send.  For example, at a rate limit of 1400 a lag limit of 700 represents half a second.
-//
-// The setting is the number of buffered movements that are allowed:
-#define SLOW_LAGLIMIT 50
-#define FAST_LAGLIMIT 100
+// Since the slow rate limit will prevent the quadrature output keeping up with the USB movement
+// report input, the quadrature output will lag behind (i.e. the quadrature mouse will continue
+// to move after the USB mouse has stopped).  This setting limits the maximum number of buffered
+// movements to the quadrature output.  If the buffer reaches this value further USB movements
+// will be discarded
+#define Q_BUFFERLIMIT 300
 
 // Interrupt Service Routines for quadrature output -------------------------------------------------------------------
 
@@ -105,48 +94,59 @@ volatile int8_t mouseEncoderPhaseY = 0;		// Y Quadrature phase (0-3)
 volatile int16_t mouseDistanceX = 0;		// Distance left for mouse to move
 volatile int16_t mouseDistanceY = 0;		// Distance left for mouse to move
 
+volatile uint8_t xTimerTop = 0;				// X axis timer TOP value
+volatile uint8_t yTimerTop = 0;				// Y axis timer TOP value
+
 // Interrupt Service Routine based on Timer0 for mouse X movement quadrature output
 ISR(TIMER0_COMPA_vect)
 {
 	// Process X output
-	if (mouseEncoderPhaseX == 0) X1_PORT |=  X1;	// Set X1 to 1
-	if (mouseEncoderPhaseX == 1) X2_PORT |=  X2;	// Set X2 to 1
-	if (mouseEncoderPhaseX == 2) X1_PORT &= ~X1;	// Set X1 to 0
-	if (mouseEncoderPhaseX == 3) X2_PORT &= ~X2;	// Set X2 to 0
-
-	// Only change phase if the mouse is still moving
 	if (mouseDistanceX > 0) {
+		// Set the output pins according to the current phase
+		if (mouseEncoderPhaseX == 0) X1_PORT |=  X1;	// Set X1 to 1
+		if (mouseEncoderPhaseX == 1) X2_PORT |=  X2;	// Set X2 to 1
+		if (mouseEncoderPhaseX == 2) X1_PORT &= ~X1;	// Set X1 to 0
+		if (mouseEncoderPhaseX == 3) X2_PORT &= ~X2;	// Set X2 to 0
+
+		// Change phase
 		if (mouseDirectionX == 0) mouseEncoderPhaseX--; else mouseEncoderPhaseX++;
 		
 		// Decrement the distance left to move
 		mouseDistanceX--;
-	}
 
-	// Range check the phase
-	if ((mouseDirectionX == 1) && (mouseEncoderPhaseX > 3)) mouseEncoderPhaseX = 0;
-	if ((mouseDirectionX == 0) && (mouseEncoderPhaseX < 0)) mouseEncoderPhaseX = 3;
+		// Range check the phase
+		if ((mouseDirectionX == 1) && (mouseEncoderPhaseX > 3)) mouseEncoderPhaseX = 0;
+		if ((mouseDirectionX == 0) && (mouseEncoderPhaseX < 0)) mouseEncoderPhaseX = 3;
+	}
+	
+	// Set the timer top value for the next interrupt
+	OCR0A = xTimerTop;
 }
 
 // Interrupt Service Routine based on Timer2 for mouse Y movement quadrature output
 ISR(TIMER2_COMPA_vect)
 {
 	// Process Y output
-	if (mouseEncoderPhaseY == 3) Y1_PORT &= ~Y1;	// Set Y1 to 0
-	if (mouseEncoderPhaseY == 2) Y2_PORT &= ~Y2;	// Set Y2 to 0
-	if (mouseEncoderPhaseY == 1) Y1_PORT |=  Y1;	// Set Y1 to 1
-	if (mouseEncoderPhaseY == 0) Y2_PORT |=  Y2;	// Set Y2 to 1
-
-	// Only change phase if the mouse is still moving
 	if (mouseDistanceY > 0) {
+		// Set the output pins according to the current phase
+		if (mouseEncoderPhaseY == 3) Y1_PORT &= ~Y1;	// Set Y1 to 0
+		if (mouseEncoderPhaseY == 2) Y2_PORT &= ~Y2;	// Set Y2 to 0
+		if (mouseEncoderPhaseY == 1) Y1_PORT |=  Y1;	// Set Y1 to 1
+		if (mouseEncoderPhaseY == 0) Y2_PORT |=  Y2;	// Set Y2 to 1
+
+		// Change phase
 		if (mouseDirectionY == 0) mouseEncoderPhaseY--; else mouseEncoderPhaseY++;
 		
 		// Decrement the distance left to move
 		mouseDistanceY--;
-	}
 
-	// Range check the phase
-	if ((mouseDirectionY == 1) && (mouseEncoderPhaseY > 3)) mouseEncoderPhaseY = 0;
-	if ((mouseDirectionY == 0) && (mouseEncoderPhaseY < 0)) mouseEncoderPhaseY = 3;
+		// Range check the phase
+		if ((mouseDirectionY == 1) && (mouseEncoderPhaseY > 3)) mouseEncoderPhaseY = 0;
+		if ((mouseDirectionY == 0) && (mouseEncoderPhaseY < 0)) mouseEncoderPhaseY = 3;
+	}
+	
+	// Set the timer top value for the next interrupt
+	OCR2A = yTimerTop;
 }
 
 // Main function
@@ -248,79 +248,54 @@ void initialiseHardware(void)
 // Initialise the ISR timers
 void initialiseTimers(void)
 {
-	// The frequency of the reports from the USB mouse is about 120 Hz (i.e. 120
-	// reports per second).  Each report can indicate up to 127 position movements
-	// in each direction (X & Y)
+	// The frequency of the reports from the USB mouse is about 100-125 Hz (i.e.
+	// 100-125 reports per second).  Each report can indicate up to 127 position
+	// movements in each direction (X & Y)
 	
-	// If we can receive 127 movements per report at a rate of 120 Hz
-	// then the maximum movement per second is 120 Hz * 127 movements =
-	// 15,240 movements per second (i.e. the quadrature output has to 
-	// be at least 15,240 Hz to keep up)
+	// If we can receive 127 movements per report at a rate of 125 Hz
+	// then the maximum movement per second is 100-125 Hz * 127 movements =
+	// 12,700 - 15,875 movements per second (i.e. the quadrature output has 
+	// to be 12,700 - 15,875 Hz to keep up)
 	
 	// The setting of the timers controls the maximum interrupt speed and 
 	// therefore the maximum possible quadrature rate output.
-	// Note that there are 4 interrupts per mouse movement (one for each
-	// quadrature phase), so the maximum output speed is 4 times slower
-	// than the maximum interrupt speed.
+	// 
+	// Each movement unit reported by the USB device causes a single phase
+	// change in the quadrature output (which means there is a 4:1 ratio
+	// between the USB movement units and the quadrature movement output)
 	
 	// Timer0 and Timer2 are 8-bit timers.  Therefore the slowest interrupt
 	// speed possible is 256 times the tick period and the fastest is a single
 	// tick period.
 	
-	// Timer prescale is /256 and the AVR clock speed is 16,000,000 Hz
-	// 16,000,000 Hz / 256 prescale = 62,500 ticks per second
+	// Timer prescale is /1024 and the AVR clock speed is 16,000,000 Hz
+	// 16,000,000 Hz / 1024 prescale = 15,625 ticks per second
 	//
-	// 1,000,000 uS per second / 62,500 ticks per second = 16 uS per tick
+	// 1,000,000 uS per second / 15,625 ticks per second = 64 uS per tick
 	//
-	// 62,500 Hz / 4 (quadrature output) = 15,625 Hz (the maximum quadrature
-	// output rate)
-	//
-	// Therefore 15,625 Hz / 256 = 61 Hz (the minimum quadrature output rate)
-	
-	// Note that 'rate' here is a little misleading for the minimum output.
-	// Since there are 4 interrupts required for the output the minimum rate
-	// has little effect.
+	// 15,625 ticks (with a 4:1 ratio) means the maximum quadrature output
+	// will be 3,906.25 Hz.
 
 	// Configure Timer0 to interrupt (8-bit timer)
 	OCR0A = 0; // In CTC mode OCR0A = TOP
 	TCCR0A = (1 << WGM01); // Clear timer on compare match (CTC) mode
-	TCCR0B = 4; //  CS02/CS01/CS00 = binary 100 = /256 prescale
+	TCCR0B = 5; //  CS02/CS01/CS00 = binary 101 = /1024 prescale
 	TIMSK0 = (1 << OCIE0A); // Timer0 interrupt enabled
 		
 	// Configure Timer2 to interrupt (8-bit timer)
 	OCR2A = 0; // In CTC mode OCR2A = TOP
 	TCCR2A = (1 << WGM21); // Clear timer on compare match (CTC) mode
-	TCCR2B = 6; // CS22/CS21/CS20 = binary 110 = /256 prescale
+	TCCR2B = 7; // CS22/CS21/CS20 = binary 111 = /1024 prescale
 	TIMSK2 = (1 << OCIE2A); // Timer2 interrupt enabled
-}
-
-// Check the setting of the rate limiter configuration switch
-// Returns 1 if a jumper is present (on) or 0 if a jumper is not present (off)
-uint8_t getRateLimiterState(void)
-{
-	// Test the rate limiter configuration switch position
-	if ((RATESW_PIN & RATESW) != 0) return 0; // Rate limiter switch is off
-	
-	// Rate limiter switch is on
-	return 1;
 }
 
 // Read the mouse USB report and process the information
 void processMouse(void)
 {
 	USB_MouseReport_Data_t MouseReport;
-	uint8_t totalMouseDistance = 0;
-	
-	uint16_t timerTopValue;
-	uint16_t maxRate;
-	
-	uint8_t rateLimiterSwitch;
 		
 	// Only process the mouse if a mouse is attached to the USB port
 	if (USB_HostState != HOST_STATE_Configured)	return;
-
-	// Get the rate limiter configuration switch state
-	rateLimiterSwitch = getRateLimiterState();
 
 	// Select mouse data pipe
 	Pipe_SelectPipe(MOUSE_DATA_IN_PIPE);
@@ -337,6 +312,12 @@ void processMouse(void)
 
 	// Ensure pipe is in the correct state before reading
 	if (Pipe_IsReadWriteAllowed()) {
+		// Set USB report processing activity on expansion port pin D0
+		// Note: This can be used to analyze the rate at which USB mouse
+		// reports are received by measuring the rate using an oscilloscope
+		// or frequency counter on D0
+		E0_PORT |= E0; // Pin = 1
+		
 		// Read in mouse report data
 		Pipe_Read_Stream_LE(&MouseReport, sizeof(MouseReport), NULL);
 		
@@ -367,101 +348,8 @@ void processMouse(void)
 		if (MouseReport.Y < 0 && mouseDirectionY == 1) mouseDistanceY = 0;
 		
 		// Process mouse X movement -------------------------------------------
-		if (MouseReport.X != 0) {
-			if (MouseReport.X > 0) {
-				// Set the mouse direction to incrementing
-				mouseDirectionX = 1;
-				mouseDistanceX += MouseReport.X;
-			} else {
-				// Set the mouse direction to decrementing
-				mouseDirectionX = 0;
-				mouseDistanceX += abs(MouseReport.X);
-			}
-			
-			// Apply the lag limit
-			if (rateLimiterSwitch == 0) {
-				if (mouseDistanceX > (127 + FAST_LAGLIMIT)) mouseDistanceX = 127;
-			} else {
-				if (mouseDistanceX > (127 + SLOW_LAGLIMIT)) mouseDistanceX = 127;
-			}
-			
-			// mouseDistanceX can exceed 127 due to lag caused by processing delays.  Here we ensure
-			// that the quadrature is output is relative to the mouseDistanceX value unless 
-			// mouseDistanceX is > 127 - in that case we always output at full speed.  This calculation
-			// is based on each received report.
-			if (mouseDistanceX > 127) totalMouseDistance = 127; else totalMouseDistance = mouseDistanceX;
-			
-			// Calculate the required timer TOP value based on the amount of mouse movement queued for output
-			timerTopValue = 255 - ((totalMouseDistance * 2) + 1);
-			
-			// Calculate the minimum allowed value of timerTopValue:
-			//
-			// The RATELIMIT is the maximum hertz of the quadrature output
-			//
-			// We have 62,500 timer ticks per second (1,000,000 / 16 uS)
-			// We need 4 timer ticks per quadrature output, 62,500 / 4 = 15,625
-			// 15,625 / RATELIMIT gives the setting of TOP at the maximum allowed rate
-			//
-			// For example:
-			// RATELIMIT = 256Hz therefore 15,625 / 256 = 61
-			// RATELIMIT = 512Hz therefore 15,625 / 512 = 31
-			// 
-			// Since the range of TOP is 0-255, we also need to subtract 1 from the result
-			if (rateLimiterSwitch == 0) maxRate = (15625 / FAST_RATELIMIT) - 1;
-			else maxRate = (15625 / SLOW_RATELIMIT) - 1;
-						
-			// If the maximum output rate is exceeded, limit the rate to the maximum
-			if (timerTopValue < maxRate) timerTopValue = maxRate;
-			
-			// Range check the timer TOP value
-			if (timerTopValue > 255) timerTopValue = 255;
-			
-			// Set the interrupt speed (timer TOP)
-			OCR0A = (uint8_t)timerTopValue;
-		}
-		
-		// Process mouse Y ----------------------------------------------------
-		if (MouseReport.Y != 0) {
-			if (MouseReport.Y > 0) {
-				// Set the mouse direction to incrementing
-				mouseDirectionY = 1;
-				mouseDistanceY += MouseReport.Y;
-				
-			} else {
-				// Set the mouse direction to decrementing
-				mouseDirectionY = 0;
-				mouseDistanceY += abs(MouseReport.Y);
-			}
-			
-			// Apply the lag limit
-			if (rateLimiterSwitch == 0) {
-				if (mouseDistanceY > (127 + FAST_LAGLIMIT)) mouseDistanceY = 127;
-				} else {
-				if (mouseDistanceY > (127 + SLOW_LAGLIMIT)) mouseDistanceY = 127;
-			}
-			
-			// mouseDistanceY can exceed 127 due to lag caused by processing delays.  Here we ensure
-			// that the quadrature is output is relative to the mouseDistanceX value unless
-			// mouseDistanceY is > 127 - in that case we always output at full speed.  This calculation
-			// is based on each received report.
-			if (mouseDistanceY > 127) totalMouseDistance = 127; else totalMouseDistance = mouseDistanceY;
-			
-			// Calculate the required timer TOP value based on the amount of mouse movement queued for output
-			timerTopValue = 255 - ((totalMouseDistance * 2) + 1);
-			
-			// Calculate the minimum allowed value of timerTopValue (see X calculation for notes)
-			if (rateLimiterSwitch == 0) maxRate = (15625 / FAST_RATELIMIT) - 1;
-			else maxRate = (15625 / SLOW_RATELIMIT) - 1;
-			
-			// If the maximum output rate is exceeded, limit the rate to the maximum
-			if (timerTopValue < maxRate) timerTopValue = maxRate;
-			
-			// Range check the timer TOP value
-			if (timerTopValue > 255) timerTopValue = 255;
-			
-			// Set the interrupt speed
-			OCR2A = (uint8_t)timerTopValue;
-		}
+		if (MouseReport.X != 0) xTimerTop = processMouseMovement(MouseReport.X, MOUSEX);
+		if (MouseReport.Y != 0) yTimerTop = processMouseMovement(MouseReport.Y, MOUSEY);
 		
 		// Process mouse buttons ----------------------------------------------
 		
@@ -476,6 +364,9 @@ void processMouse(void)
 		// Check for right mouse button
 		if ((MouseReport.Button & 0x02) == 0) RB_PORT |= RB; // Button on
 		else RB_PORT &= ~RB; // Button off
+		
+		// Clear USB report processing activity on expansion port pin D0
+		E0_PORT &= ~E0; // Pin = 0
 	}
 
 	// Clear the IN endpoint, ready for next data packet
@@ -483,6 +374,95 @@ void processMouse(void)
 
 	// Refreeze mouse data pipe
 	Pipe_Freeze();
+}
+
+// Process the mouse movement units from the USB report
+uint8_t processMouseMovement(int8_t movementUnits, uint8_t axis)
+{
+	uint16_t timerTopValue = 0;
+	
+	// Set the mouse movement direction and record the movement units
+	if (movementUnits > 0) {
+		// Set the mouse direction to incrementing
+		if (axis == MOUSEX) mouseDirectionX = 1; else mouseDirectionY = 1;
+		
+		// Add the movement units to the quadrature output buffer
+		if (axis == MOUSEX) mouseDistanceX += movementUnits;
+		else mouseDistanceY += movementUnits;
+	} else {
+		// Set the mouse direction to decrementing
+		if (axis == MOUSEX) mouseDirectionX = 0; else mouseDirectionY = 0;
+		
+		// Add the movement units to the quadrature output buffer
+		if (axis == MOUSEX) mouseDistanceX += abs(movementUnits);
+		else mouseDistanceY += abs(movementUnits);
+	}
+	
+	// Apply the quadrature output buffer limit
+	if (axis == MOUSEX) {
+		if (mouseDistanceX > Q_BUFFERLIMIT) mouseDistanceX = Q_BUFFERLIMIT;
+	} else {
+		if (mouseDistanceY > Q_BUFFERLIMIT) mouseDistanceY = Q_BUFFERLIMIT;
+	}
+	
+	// Get the current value of the quadrature output buffer
+	if (axis == MOUSEX) timerTopValue = mouseDistanceX;
+	else timerTopValue = mouseDistanceY;
+	
+	// Since the USB reports arrive at 100-125 Hz (even if there is only
+	// a small amount of movement, we have to output the quadrature
+	// at minimum rate to keep up with the reports (otherwise it creates
+	// a slow lag).  If we assume 100 Hz of reports then the following
+	// is true:
+	//
+	// 127 movements = 12,700 interrupts/sec
+	// 100 movements = 10,000 interrupts/sec
+	//  50 movements =  5,000 interrupts/sec
+	//  10 movements =  1,000 interrupts/sec
+	//   1 movement  =    100 interrupts/sec
+	//
+	// Timer speed is 15,625 ticks per second = 64 uS per tick
+	//
+	// Required timer TOP values (0 is fastest so all results are x-1):
+	// 1,000,000 / 12,700 = 78.74 / 64 uS = 1.2 - 1
+	// 1,000,000 / 10,000 = 100 / 64 uS = 1.56 - 1
+	// 1,000,000 / 5,000 = 200 / 64 uS = 3.125 - 1
+	// 1,000,000 / 1,000 = 1000 uS / 64 uS = 15.63 - 1
+	// 1,000,000 / 100 = 10000 uS / 64 uS = 156.25 - 1
+	//
+	// So:
+	//   timerTopValue = 10000 / timerTopValue; // i.e. 1,000,000 / (timerTopValue * 100)
+	//   timerTopValue = timerTopValue / 64;
+	//   timerTopValue = timerTopValue - 1;
+	
+	timerTopValue = ((10000 / timerTopValue) / 64) - 1;
+	
+	// If the 'Slow' configuration jumper is shorted; apply the quadrature rate limit
+	if ((RATESW_PIN & RATESW) == 0) {
+		// Rate limit is on
+		
+		// Rate limit is provided in hertz
+		// Timer rate is 15,625 ticks per second = 64 uS per tick
+		// Timer top value is 0-255 (8 bit)
+		
+		// There are 4 interrupts per quadrature output so if the 
+		// rate limit is 1500 Hz then the maximum interrupt speed
+		// should be 1500 * 4 = 6000 Hz
+		//
+		// So the minimum value of top should be:
+		// 1,000,000 / (1500 * 4) = 166.67 / 64 uS = 2.6
+		//
+		// Here we shift the calculation to keep it in the 16 bit range
+		uint16_t rateLimit = (10000 / ((Q_RATELIMIT / 100) * 4)) / 64;
+		
+		// If the timerTopValue is higher than the rate limit, we reduce
+		// it.  This will cause addition lag that is handled by the 
+		// quadrature output buffer limit above.
+		if (timerTopValue < rateLimit) timerTopValue = rateLimit;
+	}
+	
+	// Return the timer TOP value
+	return (uint8_t)timerTopValue;
 }
 
 // LUFA event handlers ------------------------------------------------------------------------------------------------

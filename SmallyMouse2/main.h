@@ -120,8 +120,8 @@
 // Function prototypes
 void initialiseHardware(void);
 void initialiseTimers(void);
-uint8_t getRateLimiterState(void);
 void processMouse(void);
+uint8_t processMouseMovement(int8_t movementUnits, uint8_t axis);
 
 // USB callback event handlers (LUFA)
 void EVENT_USB_Host_HostError(const uint8_t ErrorCode);

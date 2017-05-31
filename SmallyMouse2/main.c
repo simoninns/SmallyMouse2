@@ -7,7 +7,7 @@
 
 	This file is part of SmallyMouse2.
 
-    SmallyMouse is free software: you can redistribute it and/or modify
+    SmallyMouse2 is free software: you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
 	the Free Software Foundation, either version 3 of the License, or
 	(at your option) any later version.
@@ -466,7 +466,6 @@ uint8_t processMouseMovement(int8_t movementUnits, uint8_t axis)
 		// Timer TOP is 0-255, so subtract 1
 		// 10.42 ticks - 1 = 9.42 ticks
 		
-		// Here we shift the calculation to keep it in the 16 bit range
 		uint32_t rateLimit = ((1000000 / Q_RATELIMIT) / 256) - 1;
 		
 		// If the timerTopValue is less than the rate limit, we output

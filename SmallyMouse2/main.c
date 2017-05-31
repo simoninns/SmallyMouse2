@@ -117,11 +117,6 @@ ISR(TIMER0_COMPA_vect)
 		// Range check the phase
 		if ((mouseDirectionX == 1) && (mouseEncoderPhaseX > 3)) mouseEncoderPhaseX = 0;
 		if ((mouseDirectionX == 0) && (mouseEncoderPhaseX < 0)) mouseEncoderPhaseX = 3;
-	} else {
-		// Set all quadrature outputs to zero
-		X1_PORT &= ~X1;	// Set X1 to 0
-		X2_PORT &= ~X2;	// Set X2 to 0
-		mouseEncoderPhaseX = 0;
 	}
 	
 	// Set the timer top value for the next interrupt
@@ -148,11 +143,6 @@ ISR(TIMER2_COMPA_vect)
 		// Range check the phase
 		if ((mouseDirectionY == 1) && (mouseEncoderPhaseY > 3)) mouseEncoderPhaseY = 0;
 		if ((mouseDirectionY == 0) && (mouseEncoderPhaseY < 0)) mouseEncoderPhaseY = 3;
-	} else {
-		// Set all quadrature outputs to zero
-		Y1_PORT &= ~Y1;	// Set Y1 to 0
-		Y2_PORT &= ~Y2;	// Set Y2 to 0
-		mouseEncoderPhaseY = 1;
 	}
 	
 	// Set the timer top value for the next interrupt
@@ -206,10 +196,12 @@ void initialiseHardware(void)
 	Y1_PORT &= ~Y1; // Pin = 0
 	Y2_PORT &= ~Y2; // Pin = 0
 	
-	// Set mouse button output pins to off
-	LB_PORT &= ~LB; // Pin = 0 (off)
-	MB_PORT &= ~MB; // Pin = 0 (off)
-	RB_PORT &= ~RB; // Pin = 0 (off)
+	// Set mouse button output pins to on
+	// Note: Mouse buttons are inverted, so this sets them to 'off'
+	//       from the host's perspective
+	LB_PORT |= LB; // Pin = 1 (on)
+	MB_PORT |= MB; // Pin = 1 (on)
+	RB_PORT |= RB; // Pin = 1 (on)
 
 	// Set the rate limit configuration header to input
 	RATESW_DDR &= ~RATESW; // Input

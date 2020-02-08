@@ -129,6 +129,8 @@ ISR(TIMER0_COMPA_vect)
 		// Range check the phase
 		if ((mouseDirectionX == 1) && (mouseEncoderPhaseX > 3)) mouseEncoderPhaseX = 0;
 		if ((mouseDirectionX == 0) && (mouseEncoderPhaseX < 0)) mouseEncoderPhaseX = 3;
+	} else {
+		mouseEncoderPhaseX = 0;
 	}
 	
 	// Set the timer top value for the next interrupt
@@ -155,6 +157,8 @@ ISR(TIMER2_COMPA_vect)
 		// Range check the phase
 		if ((mouseDirectionY == 1) && (mouseEncoderPhaseY > 3)) mouseEncoderPhaseY = 0;
 		if ((mouseDirectionY == 0) && (mouseEncoderPhaseY < 0)) mouseEncoderPhaseY = 3;
+	} else {
+		mouseEncoderPhaseY = 0;
 	}
 	
 	// Set the timer top value for the next interrupt
@@ -373,14 +377,23 @@ void processMouse(void)
 		
 		// If the mouse movement changes direction then disregard any remaining
 		// movement units in the previous direction.
-		if (MouseReport.X > 0 && mouseDirectionX == 0) mouseDistanceX = 0;
-		if (MouseReport.X < 0 && mouseDirectionX == 1) mouseDistanceX = 0;
-		if (MouseReport.Y > 0 && mouseDirectionY == 0) mouseDistanceY = 0;
-		if (MouseReport.Y < 0 && mouseDirectionY == 1) mouseDistanceY = 0;
+		if (MouseReport.X > 0 && mouseDirectionX == 0) {
+			mouseDistanceX = 0;
+			mouseDirectionX = 1;
+		} else if (MouseReport.X < 0 && mouseDirectionX == 1) {
+			mouseDistanceX = 0;
+			mouseDirectionX = 0;
+		} else if (MouseReport.Y > 0 && mouseDirectionY == 0) {
+			mouseDistanceY = 0;
+			mouseDirectionY = 1;
+		} else if (MouseReport.Y < 0 && mouseDirectionY == 1) {
+			mouseDistanceY = 0;
+			mouseDirectionY = 0;
+		}
 		
-		// Process mouse X movement -------------------------------------------
-		if (MouseReport.X != 0) xTimerTop = processMouseMovement(MouseReport.X, MOUSEX, limitRate, dpiDivide);
-		if (MouseReport.Y != 0) yTimerTop = processMouseMovement(MouseReport.Y, MOUSEY, limitRate, dpiDivide);
+		// Process mouse X and Y movement -------------------------------------
+		xTimerTop = processMouseMovement(MouseReport.X, MOUSEX, limitRate, dpiDivide);
+		yTimerTop = processMouseMovement(MouseReport.Y, MOUSEY, limitRate, dpiDivide);
 		
 		// Process mouse buttons ----------------------------------------------
 		
@@ -443,13 +456,10 @@ uint8_t processMouseMovement(int8_t movementUnits, uint8_t axis, bool limitRate,
 			if (movementUnits < 1) movementUnits = 1;
 		}
 		
-		// Set the mouse direction to incrementing
-		if (axis == MOUSEX) mouseDirectionX = 1; else mouseDirectionY = 1;
-		
 		// Add the movement units to the quadrature output buffer
 		if (axis == MOUSEX) mouseDistanceX += movementUnits;
 		else mouseDistanceY += movementUnits;
-	} else {
+	} else if (movementUnits < 0) {
 		// Moving in the negative direction
 		
 		// Apply DPI limiting if required
@@ -458,12 +468,12 @@ uint8_t processMouseMovement(int8_t movementUnits, uint8_t axis, bool limitRate,
 			if (movementUnits > -1) movementUnits = -1;
 		}
 		
-		// Set the mouse direction to decrementing
-		if (axis == MOUSEX) mouseDirectionX = 0; else mouseDirectionY = 0;
-		
 		// Add the movement units to the quadrature output buffer
-		if (axis == MOUSEX) mouseDistanceX += abs(movementUnits);
-		else mouseDistanceY += abs(movementUnits);
+		if (axis == MOUSEX) mouseDistanceX += -movementUnits;
+		else mouseDistanceY += -movementUnits;
+	} else {
+		if (axis == MOUSEX) mouseDistanceX = 0;
+		else mouseDistanceY = 0;
 	}
 	
 	// Apply the quadrature output buffer limit

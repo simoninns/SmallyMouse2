@@ -112,16 +112,18 @@
 #define E6_DDR	DDRD
 #define E6		(1 << 6)
 
-#define E7_PORT	PORTD
-#define E7_PIN	PIND
-#define E7_DDR	DDRD
-#define E7		(1 << 7)
+
+// E7 is now used as the DPISW header
+#define DPISW_PORT	PORTD
+#define DPISW_PIN	PIND
+#define DPISW_DDR	DDRD
+#define DPISW		(1 << 7)
 
 // Function prototypes
 void initialiseHardware(void);
 void initialiseTimers(void);
 void processMouse(void);
-uint8_t processMouseMovement(int8_t movementUnits, uint8_t axis);
+uint8_t processMouseMovement(int8_t movementUnits, uint8_t axis, bool limitRate, bool dpiDivide);
 
 // USB callback event handlers (LUFA)
 void EVENT_USB_Host_HostError(const uint8_t ErrorCode);

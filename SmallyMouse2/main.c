@@ -68,9 +68,9 @@
 // this causes spurious mouse movement.
 //
 // With no rate limit the quadrature output speed will reach a maximum of 3,906.25 Hz
-// For 8-bit machines it is recommended that the speed doesn't exceed 1,400 Hz.  This limit is
+// For 8-bit machines it is recommended that the speed doesn't exceed 500 Hz.  This limit is
 // only applied if the 'slow' configuration jumper is shorted (i.e. on)
-#define Q_RATELIMIT 1400
+#define Q_RATELIMIT 500
 
 // Quadrature output buffer limit
 //
@@ -80,6 +80,13 @@
 // movements to the quadrature output.  If the buffer reaches this value further USB movements
 // will be discarded
 #define Q_BUFFERLIMIT 300
+
+// DPI Divider
+//
+// Some USB mice have very high DPI which causes the quadrature rate to be too high (making the
+// mouse move too fast).  If the DPISW header is shorted the following constant will be used to 
+// divide the DPI rate to slow things down.  2 or 3 are reasonable values.
+#define DPI_DIVIDER 2
 
 // Interrupt Service Routines for quadrature output -------------------------------------------------------------------
 
@@ -212,6 +219,11 @@ void initialiseHardware(void)
 	RATESW_DDR &= ~RATESW; // Input
 	RATESW_PORT |= RATESW; // Turn on weak pull-up
 	
+	// Configure E7 on the expansion header to act as
+	// DPISW (since it is easily jumpered to 0V)	
+	DPISW_DDR &= ~DPISW; // Input
+	DPISW_PORT |= DPISW; // Turn on weak pull-up
+	
 	// Initialise the expansion (Ian) header
 	E0_DDR |= ~E0; // Output
 	E1_DDR |= ~E1; // Output
@@ -220,7 +232,6 @@ void initialiseHardware(void)
 	E4_DDR |= ~E4; // Output
 	E5_DDR |= ~E5; // Output
 	E6_DDR |= ~E6; // Output
-	E7_DDR |= ~E7; // Output
 	
 	E0_PORT &= ~E0; // Pin = 0
 	E1_PORT &= ~E1; // Pin = 0
@@ -229,7 +240,6 @@ void initialiseHardware(void)
 	E4_PORT &= ~E4; // Pin = 0
 	E5_PORT &= ~E5; // Pin = 0
 	E6_PORT &= ~E6; // Pin = 0
-	E7_PORT &= ~E7; // Pin = 0
 	
 	// Initialise the LUFA USB stack
 	USB_Init();
@@ -248,8 +258,14 @@ void initialiseHardware(void)
 
 	// Output some debug header information to the serial console
 	puts_P(PSTR(ESC_FG_YELLOW "SmallyMouse2 - Serial debug console\r\n" ESC_FG_WHITE));
-	puts_P(PSTR(ESC_FG_YELLOW "(c)2017 Simon Inns\r\n" ESC_FG_WHITE));
+	puts_P(PSTR(ESC_FG_YELLOW "(c)2017-2020 Simon Inns\r\n" ESC_FG_WHITE));
 	puts_P(PSTR(ESC_FG_YELLOW "http://www.waitingforfriday.com\r\n" ESC_FG_WHITE));
+	
+	// Now report the status of the various configuration switches
+	if ((RATESW_PIN & RATESW) == 0) puts_P(PSTR("Rate limit switch is ON\r\n"));
+	else puts_P(PSTR("Rate limit switch is OFF\r\n"));
+	if ((DPISW_PIN & DPISW) == 0) puts_P(PSTR("DPI divide switch is ON\r\n"));
+	else puts_P(PSTR("DPI divide switch is OFF\r\n"));
 }
 
 // Initialise the ISR timers
@@ -300,10 +316,18 @@ void initialiseTimers(void)
 void processMouse(void)
 {
 	USB_MouseReport_Data_t MouseReport;
+	bool limitRate = false;
+	bool dpiDivide = false;
 		
 	// Only process the mouse if a mouse is attached to the USB port
 	if (USB_HostState != HOST_STATE_Configured)	return;
-
+	
+	// Get the state of the rate limiting (slow) header
+	if ((RATESW_PIN & RATESW) == 0) limitRate = true;
+	
+	// Get the state of the DPI divider header
+	if ((DPISW_PIN & DPISW) == 0) dpiDivide = true;
+	
 	// Select mouse data pipe
 	Pipe_SelectPipe(MOUSE_DATA_IN_PIPE);
 
@@ -355,8 +379,8 @@ void processMouse(void)
 		if (MouseReport.Y < 0 && mouseDirectionY == 1) mouseDistanceY = 0;
 		
 		// Process mouse X movement -------------------------------------------
-		if (MouseReport.X != 0) xTimerTop = processMouseMovement(MouseReport.X, MOUSEX);
-		if (MouseReport.Y != 0) yTimerTop = processMouseMovement(MouseReport.Y, MOUSEY);
+		if (MouseReport.X != 0) xTimerTop = processMouseMovement(MouseReport.X, MOUSEX, limitRate, dpiDivide);
+		if (MouseReport.Y != 0) yTimerTop = processMouseMovement(MouseReport.Y, MOUSEY, limitRate, dpiDivide);
 		
 		// Process mouse buttons ----------------------------------------------
 		
@@ -384,12 +408,20 @@ void processMouse(void)
 }
 
 // Process the mouse movement units from the USB report
-uint8_t processMouseMovement(int8_t movementUnits, uint8_t axis)
+uint8_t processMouseMovement(int8_t movementUnits, uint8_t axis, bool limitRate, bool dpiDivide)
 {
 	uint16_t timerTopValue = 0;
 	
 	// Set the mouse movement direction and record the movement units
 	if (movementUnits > 0) {
+		// Moving in the positive direction
+		
+		// Apply DPI limiting if required
+		if (dpiDivide) {
+			movementUnits /= DPI_DIVIDER;
+			if (movementUnits < 1) movementUnits = 1;
+		}
+		
 		// Set the mouse direction to incrementing
 		if (axis == MOUSEX) mouseDirectionX = 1; else mouseDirectionY = 1;
 		
@@ -397,6 +429,14 @@ uint8_t processMouseMovement(int8_t movementUnits, uint8_t axis)
 		if (axis == MOUSEX) mouseDistanceX += movementUnits;
 		else mouseDistanceY += movementUnits;
 	} else {
+		// Moving in the negative direction
+		
+		// Apply DPI limiting if required
+		if (dpiDivide) {
+			movementUnits /= DPI_DIVIDER;
+			if (movementUnits > -1) movementUnits = -1;
+		}
+		
 		// Set the mouse direction to decrementing
 		if (axis == MOUSEX) mouseDirectionX = 0; else mouseDirectionY = 0;
 		
@@ -448,7 +488,7 @@ uint8_t processMouseMovement(int8_t movementUnits, uint8_t axis)
 	timerTopValue = ((10000 / timerTopValue) / 64) - 1;
 	
 	// If the 'Slow' configuration jumper is shorted; apply the quadrature rate limit
-	if ((RATESW_PIN & RATESW) == 0) {
+	if (limitRate) {
 		// Rate limit is on
 		
 		// Rate limit is provided in hertz

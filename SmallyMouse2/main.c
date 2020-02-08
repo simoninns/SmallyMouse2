@@ -198,9 +198,6 @@ void initialiseHardware(void)
 	X2_DDR |= X2; // Output
 	Y1_DDR |= Y1; // Output
 	Y2_DDR |= Y2; // Output
-	LB_DDR |= LB; // Output
-	MB_DDR |= MB; // Output
-	RB_DDR |= RB; // Output
 	
 	// Set quadrature output pins to zero
 	X1_PORT &= ~X1; // Pin = 0
@@ -208,12 +205,15 @@ void initialiseHardware(void)
 	Y1_PORT &= ~Y1; // Pin = 0
 	Y2_PORT &= ~Y2; // Pin = 0
 	
-	// Set mouse button output pins to on
-	// Note: Mouse buttons are inverted, so this sets them to 'off'
-	//       from the host's perspective
-	LB_PORT |= LB; // Pin = 1 (on)
-	MB_PORT |= MB; // Pin = 1 (on)
-	RB_PORT |= RB; // Pin = 1 (on)
+	// Set mouse button output pins open drain
+	// (solves issues with some retro machines that
+	// don't like 5V to be sources from the pins)
+	LB_DDR &= ~LB; // 0 = input
+	MB_DDR &= ~MB; // 0 = input
+	RB_DDR &= ~RB; // 0 = input
+	LB_PORT &= ~LB; // Pin = 0 (off)
+	MB_PORT &= ~MB; // Pin = 0 (off)
+	RB_PORT &= ~RB; // Pin = 0 (off)
 
 	// Set the rate limit configuration header to input
 	RATESW_DDR &= ~RATESW; // Input
@@ -385,16 +385,37 @@ void processMouse(void)
 		// Process mouse buttons ----------------------------------------------
 		
 		// Check for left mouse button
-		if ((MouseReport.Button & 0x01) == 0) LB_PORT |= LB; // Button on
-		else LB_PORT &= ~LB; // Button off
+		if ((MouseReport.Button & 0x01) == 0) {
+			// Open-drain
+			LB_PORT &= ~LB;
+			LB_DDR &= ~LB;
+		} else {
+			// Set to 0V
+			LB_DDR |= LB; // 1 = output
+			LB_PORT &= ~LB; // Button low
+		}
 			
 		// Check for middle mouse button
-		if ((MouseReport.Button & 0x04) == 0) MB_PORT |= MB; // Button on
-		else MB_PORT &= ~MB; // Button off
+		if ((MouseReport.Button & 0x04) == 0) {
+			// Open-drain
+			MB_PORT &= ~MB;
+			MB_DDR &= ~MB;
+		} else {
+			// Set to 0V
+			MB_DDR |= MB; // 1 = output
+			MB_PORT &= ~MB; // Button low
+		}
 			
 		// Check for right mouse button
-		if ((MouseReport.Button & 0x02) == 0) RB_PORT |= RB; // Button on
-		else RB_PORT &= ~RB; // Button off
+		if ((MouseReport.Button & 0x02) == 0) {
+			// Open-drain
+			RB_PORT &= ~RB;
+			RB_DDR &= ~RB;
+		} else {
+			// Set to 0V
+			RB_DDR |= RB; // 1 = output
+			RB_PORT &= RB; // Button low
+		}
 		
 		// Clear USB report processing activity on expansion port pin D0
 		E0_PORT &= ~E0; // Pin = 0

@@ -3,7 +3,7 @@
 
 	Main functions
     SmallyMouse2 - USB to quadrature mouse converter
-    Copyright (C) 2017 Simon Inns
+    Copyright (C) 2017-2020 Simon Inns
 
 	This file is part of SmallyMouse2.
 

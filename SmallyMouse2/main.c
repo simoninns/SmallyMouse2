@@ -3,7 +3,7 @@
 
 	Main functions
     SmallyMouse2 - USB to quadrature mouse converter
-    Copyright (C) 2017 Simon Inns
+    Copyright (C) 2017-2020 Simon Inns
 
 	This file is part of SmallyMouse2.
 
@@ -23,6 +23,11 @@
 	Email: simon.inns@gmail.com
 
 ************************************************************************/
+
+// Important notice:  If you port this firmware to another hardware design
+// it *will be* a derivative of the original and therefore you must pay attention
+// to the CC hardware licensing and release your hardware design as per the share-
+// alike license.  Keep it open! ...and yes, that includes you Commodore chaps.
 
 // System includes
 #include <avr/io.h>

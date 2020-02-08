@@ -130,6 +130,7 @@ ISR(TIMER0_COMPA_vect)
 		if ((mouseDirectionX == 1) && (mouseEncoderPhaseX > 3)) mouseEncoderPhaseX = 0;
 		if ((mouseDirectionX == 0) && (mouseEncoderPhaseX < 0)) mouseEncoderPhaseX = 3;
 	} else {
+		// Reset the phase if the mouse isn't moving
 		mouseEncoderPhaseX = 0;
 	}
 	
@@ -158,6 +159,7 @@ ISR(TIMER2_COMPA_vect)
 		if ((mouseDirectionY == 1) && (mouseEncoderPhaseY > 3)) mouseEncoderPhaseY = 0;
 		if ((mouseDirectionY == 0) && (mouseEncoderPhaseY < 0)) mouseEncoderPhaseY = 3;
 	} else {
+		// Reset the phase if the mouse isn't moving
 		mouseEncoderPhaseY = 0;
 	}
 	

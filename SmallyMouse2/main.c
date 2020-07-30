@@ -429,7 +429,7 @@ void processMouse(void)
 		} else {
 			// Set to 0V
 			RB_DDR |= RB; // 1 = output
-			RB_PORT &= RB; // Button low
+			RB_PORT &= ~RB; // Button low
 		}
 		
 		// Clear USB report processing activity on expansion port pin D0

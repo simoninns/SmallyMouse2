@@ -114,24 +114,23 @@ ISR(TIMER0_COMPA_vect)
 {
 	// Process X output
 	if (mouseDistanceX > 0) {
+		// Change phase and range check
+		if (mouseDirectionX == 0) {
+			mouseEncoderPhaseX--;
+			if (mouseEncoderPhaseX < 0) mouseEncoderPhaseX = 3;
+			} else {
+			mouseEncoderPhaseX++;
+			if (mouseEncoderPhaseX > 3) mouseEncoderPhaseX = 0;
+		}
+		
 		// Set the output pins according to the current phase
 		if (mouseEncoderPhaseX == 0) X1_PORT |=  X1;	// Set X1 to 1
 		if (mouseEncoderPhaseX == 1) X2_PORT |=  X2;	// Set X2 to 1
 		if (mouseEncoderPhaseX == 2) X1_PORT &= ~X1;	// Set X1 to 0
 		if (mouseEncoderPhaseX == 3) X2_PORT &= ~X2;	// Set X2 to 0
-
-		// Change phase
-		if (mouseDirectionX == 0) mouseEncoderPhaseX--; else mouseEncoderPhaseX++;
 		
 		// Decrement the distance left to move
 		mouseDistanceX--;
-
-		// Range check the phase
-		if ((mouseDirectionX == 1) && (mouseEncoderPhaseX > 3)) mouseEncoderPhaseX = 0;
-		if ((mouseDirectionX == 0) && (mouseEncoderPhaseX < 0)) mouseEncoderPhaseX = 3;
-	} else {
-		// Reset the phase if the mouse isn't moving
-		mouseEncoderPhaseX = 0;
 	}
 	
 	// Set the timer top value for the next interrupt
@@ -143,24 +142,23 @@ ISR(TIMER2_COMPA_vect)
 {
 	// Process Y output
 	if (mouseDistanceY > 0) {
+		// Change phase and range check
+		if (mouseDirectionY == 0) {
+			mouseEncoderPhaseY--;
+			if (mouseEncoderPhaseY < 0) mouseEncoderPhaseY = 3;
+			} else {
+			mouseEncoderPhaseY++;
+			if (mouseEncoderPhaseY > 3) mouseEncoderPhaseY = 0;
+		}
+				
 		// Set the output pins according to the current phase
 		if (mouseEncoderPhaseY == 3) Y1_PORT &= ~Y1;	// Set Y1 to 0
 		if (mouseEncoderPhaseY == 2) Y2_PORT &= ~Y2;	// Set Y2 to 0
 		if (mouseEncoderPhaseY == 1) Y1_PORT |=  Y1;	// Set Y1 to 1
 		if (mouseEncoderPhaseY == 0) Y2_PORT |=  Y2;	// Set Y2 to 1
 
-		// Change phase
-		if (mouseDirectionY == 0) mouseEncoderPhaseY--; else mouseEncoderPhaseY++;
-		
 		// Decrement the distance left to move
 		mouseDistanceY--;
-
-		// Range check the phase
-		if ((mouseDirectionY == 1) && (mouseEncoderPhaseY > 3)) mouseEncoderPhaseY = 0;
-		if ((mouseDirectionY == 0) && (mouseEncoderPhaseY < 0)) mouseEncoderPhaseY = 3;
-	} else {
-		// Reset the phase if the mouse isn't moving
-		mouseEncoderPhaseY = 0;
 	}
 	
 	// Set the timer top value for the next interrupt

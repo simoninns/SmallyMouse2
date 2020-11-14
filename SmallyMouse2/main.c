@@ -375,18 +375,20 @@ void processMouse(void)
 		//
 		// X and Y have a range of -127 to +127
 		
-		// If the mouse movement changes direction then disregard any remaining
-		// movement units in the previous direction.
+		// If the mouse movement changes X direction then disregard any remaining movement
 		if (MouseReport.X > 0 && mouseDirectionX == 0) {
 			mouseDistanceX = 0;
 			mouseDirectionX = 1;
 		} else if (MouseReport.X < 0 && mouseDirectionX == 1) {
 			mouseDistanceX = 0;
 			mouseDirectionX = 0;
-		} else if (MouseReport.Y > 0 && mouseDirectionY == 0) {
+		}
+		
+		// If the mouse movement changes Y direction then disregard any remaining movement
+		if (MouseReport.Y > 0 && mouseDirectionY == 0) {
 			mouseDistanceY = 0;
 			mouseDirectionY = 1;
-		} else if (MouseReport.Y < 0 && mouseDirectionY == 1) {
+			} else if (MouseReport.Y < 0 && mouseDirectionY == 1) {
 			mouseDistanceY = 0;
 			mouseDirectionY = 0;
 		}
@@ -516,7 +518,8 @@ uint8_t processMouseMovement(int8_t movementUnits, uint8_t axis, bool limitRate,
 	//   timerTopValue = timerTopValue / 64;
 	//   timerTopValue = timerTopValue - 1;
 	
-	timerTopValue = ((10000 / timerTopValue) / 64) - 1;
+	timerTopValue = 155; // Only used if div by 0
+	if (timerTopValue > 0) timerTopValue = ((10000 / timerTopValue) / 64) - 1;
 	
 	// If the 'Slow' configuration jumper is shorted; apply the quadrature rate limit
 	if (limitRate) {

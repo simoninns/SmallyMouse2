@@ -261,7 +261,7 @@ void initialiseHardware(void)
 	Serial_CreateStream(NULL);
 
 	// Output some debug header information to the serial console
-	puts_P(PSTR(ESC_FG_YELLOW "SmallyMouse2 - Serial debug console\r\n" ESC_FG_WHITE));
+	puts_P(PSTR(ESC_FG_YELLOW "SmallyMouse2 V1.3 - Serial debug console\r\n" ESC_FG_WHITE));
 	puts_P(PSTR(ESC_FG_YELLOW "(c)2017-2020 Simon Inns\r\n" ESC_FG_WHITE));
 	puts_P(PSTR(ESC_FG_YELLOW "http://www.waitingforfriday.com\r\n" ESC_FG_WHITE));
 	
@@ -375,18 +375,20 @@ void processMouse(void)
 		//
 		// X and Y have a range of -127 to +127
 		
-		// If the mouse movement changes direction then disregard any remaining
-		// movement units in the previous direction.
+		// If the mouse movement changes X direction then disregard any remaining movement
 		if (MouseReport.X > 0 && mouseDirectionX == 0) {
 			mouseDistanceX = 0;
 			mouseDirectionX = 1;
 		} else if (MouseReport.X < 0 && mouseDirectionX == 1) {
 			mouseDistanceX = 0;
 			mouseDirectionX = 0;
-		} else if (MouseReport.Y > 0 && mouseDirectionY == 0) {
+		}
+		
+		// If the mouse movement changes Y direction then disregard any remaining movement
+		if (MouseReport.Y > 0 && mouseDirectionY == 0) {
 			mouseDistanceY = 0;
 			mouseDirectionY = 1;
-		} else if (MouseReport.Y < 0 && mouseDirectionY == 1) {
+			} else if (MouseReport.Y < 0 && mouseDirectionY == 1) {
 			mouseDistanceY = 0;
 			mouseDirectionY = 0;
 		}
@@ -516,8 +518,9 @@ uint8_t processMouseMovement(int8_t movementUnits, uint8_t axis, bool limitRate,
 	//   timerTopValue = timerTopValue / 64;
 	//   timerTopValue = timerTopValue - 1;
 	
-	timerTopValue = ((10000 / timerTopValue) / 64) - 1;
-	
+	if (timerTopValue > 0) timerTopValue = ((10000 / timerTopValue) / 64) - 1;
+	else timerTopValue = 0; // Avoid divide by zero
+		
 	// If the 'Slow' configuration jumper is shorted; apply the quadrature rate limit
 	if (limitRate) {
 		// Rate limit is on

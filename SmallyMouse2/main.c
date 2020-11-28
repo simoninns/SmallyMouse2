@@ -518,9 +518,9 @@ uint8_t processMouseMovement(int8_t movementUnits, uint8_t axis, bool limitRate,
 	//   timerTopValue = timerTopValue / 64;
 	//   timerTopValue = timerTopValue - 1;
 	
-	timerTopValue = 155; // Only used if div by 0
 	if (timerTopValue > 0) timerTopValue = ((10000 / timerTopValue) / 64) - 1;
-	
+	else timerTopValue = 0; // Avoid divide by zero
+		
 	// If the 'Slow' configuration jumper is shorted; apply the quadrature rate limit
 	if (limitRate) {
 		// Rate limit is on

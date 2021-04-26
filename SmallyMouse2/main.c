@@ -447,6 +447,8 @@ void processMouse(void)
 uint8_t processMouseMovement(int8_t movementUnits, uint8_t axis, bool limitRate, bool dpiDivide)
 {
 	uint16_t timerTopValue = 0;
+	static int8_t skippedunits[2] = {0,0};
+
 	
 	// Set the mouse movement direction and record the movement units
 	if (movementUnits > 0) {
@@ -455,7 +457,19 @@ uint8_t processMouseMovement(int8_t movementUnits, uint8_t axis, bool limitRate,
 		// Apply DPI limiting if required
 		if (dpiDivide) {
 			movementUnits /= DPI_DIVIDER;
-			if (movementUnits < 1) movementUnits = 1;
+			// avoid inverse mouse acceleration effect where slow movement is at full DPI -- dh219
+			if( movementUnits == 0  ) {// has been scaled away to zero
+				if( skippedunits[axis] >= DPI_DIVIDER ) {
+					movementUnits = 1;
+					skippedunits[axis] = 0;
+				}
+				else {
+					if( skippedunits[axis] < 0 ) {
+						skippedunits[axis] = 0;
+					}
+					skippedunits[axis]++;
+				}
+			}
 		}
 		
 		// Add the movement units to the quadrature output buffer
@@ -467,7 +481,19 @@ uint8_t processMouseMovement(int8_t movementUnits, uint8_t axis, bool limitRate,
 		// Apply DPI limiting if required
 		if (dpiDivide) {
 			movementUnits /= DPI_DIVIDER;
-			if (movementUnits > -1) movementUnits = -1;
+			// avoid inverse mouse acceleration effect where slow movement is at full DPI -- dh219
+			if( movementUnits == 0  ) {// has been scaled away to zero
+				if( skippedunits[axis] <= -DPI_DIVIDER ) {
+					movementUnits = -1;
+					skippedunits[axis] = 0;
+				}
+				else {
+					if( skippedunits[axis] > 0 ) {
+						skippedunits[axis] = 0;
+					}
+					skippedunits[axis]--;
+				}
+			}
 		}
 		
 		// Add the movement units to the quadrature output buffer

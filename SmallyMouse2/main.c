@@ -263,7 +263,7 @@ void initialiseHardware(void)
 	// Output some debug header information to the serial console
 	puts_P(PSTR(ESC_FG_YELLOW "SmallyMouse2 V1.4 - Serial debug console\r\n" ESC_FG_WHITE));
 	puts_P(PSTR(ESC_FG_YELLOW "(c)2017-2023 Simon Inns\r\n" ESC_FG_WHITE));
-	puts_P(PSTR(ESC_FG_YELLOW "http://www.waitingforfriday.com\r\n" ESC_FG_WHITE));
+	puts_P(PSTR(ESC_FG_YELLOW "https://github.com/simoninns/SmallyMouse2\r\n" ESC_FG_WHITE));
 	
 	// Now report the status of the various configuration switches
 	if ((RATESW_PIN & RATESW) == 0) puts_P(PSTR("Rate limit switch is ON\r\n"));

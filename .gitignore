@@ -273,3 +273,9 @@ __pycache__/
 
 # Cake - Uncomment if you are using it
 # tools/
+
+# Added 20231207
+*.o
+*.elf
+*.hex
+

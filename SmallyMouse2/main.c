@@ -3,7 +3,7 @@
 
 	Main functions
     SmallyMouse2 - USB to quadrature mouse converter
-    Copyright (C) 2017-2020 Simon Inns
+    Copyright (C) 2017-2023 Simon Inns
 
 	This file is part of SmallyMouse2.
 
@@ -261,8 +261,8 @@ void initialiseHardware(void)
 	Serial_CreateStream(NULL);
 
 	// Output some debug header information to the serial console
-	puts_P(PSTR(ESC_FG_YELLOW "SmallyMouse2 V1.3 - Serial debug console\r\n" ESC_FG_WHITE));
-	puts_P(PSTR(ESC_FG_YELLOW "(c)2017-2020 Simon Inns\r\n" ESC_FG_WHITE));
+	puts_P(PSTR(ESC_FG_YELLOW "SmallyMouse2 V1.4 - Serial debug console\r\n" ESC_FG_WHITE));
+	puts_P(PSTR(ESC_FG_YELLOW "(c)2017-2023 Simon Inns\r\n" ESC_FG_WHITE));
 	puts_P(PSTR(ESC_FG_YELLOW "http://www.waitingforfriday.com\r\n" ESC_FG_WHITE));
 	
 	// Now report the status of the various configuration switches
